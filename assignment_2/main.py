@@ -18,7 +18,7 @@ ysTensor = torch.tensor(ys)
 # Create the design matrix X with ones in the first column and xs in the second column
 X = torch.stack((torch.ones_like(xsTensor), xsTensor), dim=1)
 
-# Calculate the coefficients using the matrix approach
+# Calculate the coefficients using the matrix approach w=(X^T * X)^-1 * X^T * y
 XT = X.t()  # Transpose of X
 XTX = XT.mm(X)  # X^T * X
 # X^T * y (note that we need to reshape y to be a column vector)
