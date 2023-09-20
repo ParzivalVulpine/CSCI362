@@ -86,7 +86,8 @@ for epoch in range(epochs):  # the training loop
     # Compute and print the current loss, which is the mean squared error:
     #     sum_{k=1}^32 (yss_pred[k] - yss[k])^2 / 32.
     loss = (yss_pred - yss).pow(2).sum()/num_examples  # torch.Size([])
-    print("epoch: {0}, current loss: {1}".format(epoch+1, loss.item()))
+    if epoch % 1000 == 0:
+        print("epoch: {0}, current loss: {1}".format(epoch+1, loss.item()))
 
     # Compute the gradient of the loss function w/r to the weights which is the
     # vector with jth component (for j=0,1,2) equal to:
