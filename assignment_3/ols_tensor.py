@@ -55,8 +55,8 @@ lin_alg_sol = torch.linalg.lstsq(A, yss, driver='gels').solution[:, 0]
 # mean center; or comment out all 4 lines; or just the last 2.
 xss_means = xss.mean(0)  # xss_means.size() returns torch.size([2])
 yss_means = yss.mean()   # yss_means.size() returns torch.size([])
-xss_stds = xss.std(0)   # similarly here
-yss_stds = yss.std()    # and here
+# xss_stds = xss.std(0)   # similarly here
+# yss_stds = yss.std()    # and here
 
 # Mean center the inputs and output (if xss_means and yss_means are defined).
 if 'xss_means' in locals() and 'yss_means' in locals():
@@ -73,8 +73,8 @@ xss = torch.cat((torch.ones(len(xss), 1), xss), 1)  # torch.Size([32,3])
 # The weights, randomly initialized. Here, w[0] will be the bias.
 w = torch.rand(3, 1)-0.5*torch.ones(3, 1)  # torch.Size([3,1])
 
-alpha = 0.5  # learning rate
-epochs = 30  # the total number of times the model sees all of the data
+alpha = 0.0043  # learning rate
+epochs = 10000  # the total number of times the model sees all of the data
 num_examples = len(xss)  # the number of examples
 
 for epoch in range(epochs):  # the training loop
