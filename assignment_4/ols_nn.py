@@ -65,14 +65,17 @@ print("The model is:\n", model)
 criterion = nn.MSELoss()
 
 learning_rate = 0.022
-epochs = 100
-batchsize = 5
+epochs = 30
+batchsize = 4
+# I tried to experiment with momentum, but I will revisit this after our next lecture.
+momentum = 0.9
 
 for epoch in range(epochs):
-    # Shuffle the data
+    # Adding stochasticity (noise) to the gradient descent
     indices = torch.randperm(xss.shape[0])
     xss_shuffled = xss[indices]
     yss_shuffled = yss[indices]
+    acc_loss = 0
 
     # Train on batches
     for i in range(0, xss.shape[0], batchsize):
@@ -84,16 +87,17 @@ for epoch in range(epochs):
 
         # Compute loss
         loss = criterion(y_pred, y_batch)
+        acc_loss += loss.item()
 
         # Backward pass
         model.zero_grad()
         loss.backward()
 
         # Update weights
-        with torch.no_grad():
-            for param in model.parameters():
-                param -= learning_rate * param.grad
-    print("epoch: {0}, current loss: {1}".format(epoch+1, loss.item()))
+        for param in model.parameters():
+            param.data.sub_(param.grad.data * learning_rate)
+    print("epoch: {0}, accumulated loss: {1}".format(
+        epoch+1, acc_loss * batchsize / xss.shape[0]))
 
 # extract the weights and bias into a list
 params = list(model.parameters())
