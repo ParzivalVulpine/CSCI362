@@ -46,9 +46,9 @@ criterion = nn.MSELoss()
 
 num_examples = len(data)
 batch_size = len(data)//10
-learning_rate = .01
-momentum = .99
-epochs = 100
+learning_rate = .007
+momentum = .9
+epochs = 1000
 
 # Implementing momentum by hand
 z_parameters = []
@@ -77,7 +77,16 @@ for epoch in range(epochs):
 
     with torch.no_grad():
         total_loss = criterion(model(xss), yss).item()
-    print('epoch: {0}, loss: {1:11.8f}'.format(epoch+1, total_loss))
+
+    print_str = "epoch: {0}, loss: {1}".format(
+        epoch+1, total_loss*batch_size/num_examples)
+    if epochs < 20 or epoch < 7 or epoch > epochs - 17:
+        print(print_str)
+    elif epoch == 7:
+        print("...")
+    else:
+        print(print_str, end='\b'*len(print_str), flush=True)
+
 
 print("total number of examples:", num_examples, end='; ')
 print("batch size:", batch_size)
