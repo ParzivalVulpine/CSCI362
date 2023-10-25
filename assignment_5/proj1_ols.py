@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# ols.py                                                      SSimmons Oct. 2018
+# nonlinear.py                                                      SSimmons Oct. 2018
 """
 Uses the nn library along with autograd to find the least-squares linear model
 using, optionally, mini-batch gradient descent along and/or momentum.

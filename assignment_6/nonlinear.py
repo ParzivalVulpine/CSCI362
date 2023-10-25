@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-# nonlinear.py                                                     SSimmons March 2018
 """
 Uses a neural net to find the ordinary least-squares regression model. Trains
 with batch gradient descent, and computes r^2 to gauge predictive quality.
 """
 
-import torch
 import pandas as pd
+import torch
 import torch.nn as nn
 
 # Read the named columns from the csv file into a dataframe.
@@ -25,6 +23,7 @@ data.div_(data.std(0))  # normalize
 xss = data[:, 1:]
 yss = data[:, :1]
 
+
 # define a model class
 
 
@@ -32,10 +31,15 @@ class LinearModel(nn.Module):
 
     def __init__(self):
         super(LinearModel, self).__init__()
-        self.layer1 = nn.Linear(13, 1)
+        # Modified layer 1 to become the output for layer 2
+        self.layer1 = nn.Linear(13, 10)
+        self.layer2 = nn.Linear(10, 1)
 
     def forward(self, xss):
-        return self.layer1(xss)
+        # Added relu activation function
+        xss = self.layer1(xss)
+        xss = torch.relu(xss)
+        return self.layer2(xss)
 
 
 # create and print an instance of the model class
@@ -45,7 +49,7 @@ print(model)
 criterion = nn.MSELoss()
 
 num_examples = len(data)
-batch_size = len(data)//10
+batch_size = 25
 learning_rate = .007
 momentum = .9
 epochs = 1000
@@ -59,7 +63,7 @@ for param in z_parameters:
 
 # train the model
 for epoch in range(epochs):
-    for _ in range(num_examples//batch_size):
+    for _ in range(num_examples // batch_size):
         # randomly pick batchsize examples from data
         indices = torch.randperm(num_examples)[:batch_size]
 
@@ -79,18 +83,18 @@ for epoch in range(epochs):
         total_loss = criterion(model(xss), yss).item()
 
     print_str = "epoch: {0}, loss: {1}".format(
-        epoch+1, total_loss*batch_size/num_examples)
+        epoch + 1, total_loss * batch_size / num_examples)
     if epochs < 20 or epoch < 7 or epoch > epochs - 17:
         print(print_str)
     elif epoch == 7:
         print("...")
     else:
-        print(print_str, end='\b'*len(print_str), flush=True)
+        print(print_str, end='\b' * len(print_str), flush=True)
 
-
-print("total number of examples:", num_examples, end='; ')
-print("batch size:", batch_size)
-print("learning rate:", learning_rate)
+print(f"total number of examples: {num_examples}")
+print(f"batch size: {batch_size}")
+print(f"learning rate: {learning_rate}")
+print(f"momentum: {momentum}")
 
 # Compute 1-SSE/SST which is the proportion of the variance in the data
 # explained by the regression hyperplane.
@@ -98,6 +102,6 @@ SS_E = 0.0
 SS_T = 0.0
 mean = yss.mean()
 for xs, ys in zip(xss, yss):
-    SS_E = SS_E + (ys - model(xs))**2
-    SS_T = SS_T + (ys - mean)**2
-print(f"1-SSE/SST = {1.0-(SS_E/SS_T).item():1.4f}")
+    SS_E = SS_E + (ys - model(xs)) ** 2
+    SS_T = SS_T + (ys - mean) ** 2
+print(f"1-SSE/SST = {1.0 - (SS_E / SS_T).item():1.4f}")
