@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# nonlinear_7.py                                                     SSimmons March 2018
 """
 Uses a neural net to find the ordinary least-squares regression model. Trains
 with batch gradient descent, and computes r^2 to gauge predictive quality.
@@ -33,10 +31,15 @@ class LinearModel(nn.Module):
 
     def __init__(self):
         super(LinearModel, self).__init__()
-        self.layer1 = nn.Linear(13, 1)
+        # Modified layer 1 to become the output for layer 2
+        self.layer1 = nn.Linear(13, 10)
+        self.layer2 = nn.Linear(10, 1)
 
     def forward(self, xss):
-        return self.layer1(xss)
+        # Added relu activation function
+        xss = self.layer1(xss)
+        xss = torch.relu(xss)
+        return self.layer2(xss)
 
 
 # create and print an instance of the model class
@@ -46,7 +49,7 @@ print(model)
 criterion = nn.MSELoss()
 
 num_examples = len(data)
-batch_size = len(data) // 10
+batch_size = 25
 learning_rate = .007
 momentum = .9
 epochs = 1000
@@ -88,9 +91,10 @@ for epoch in range(epochs):
     else:
         print(print_str, end='\b' * len(print_str), flush=True)
 
-print("total number of examples:", num_examples, end='; ')
-print("batch size:", batch_size)
-print("learning rate:", learning_rate)
+print(f"total number of examples: {num_examples}")
+print(f"batch size: {batch_size}")
+print(f"learning rate: {learning_rate}")
+print(f"momentum: {momentum}")
 
 # Compute 1-SSE/SST which is the proportion of the variance in the data
 # explained by the regression hyperplane.
