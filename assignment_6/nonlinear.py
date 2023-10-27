@@ -3,20 +3,9 @@ Uses a neural net to find the ordinary least-squares regression model. Trains
 with batch gradient descent, and computes r^2 to gauge predictive quality.
 """
 
-import random
-
-import du.lib as dulib
 import pandas as pd
 import torch
 import torch.nn as nn
-
-device = torch.device('cpu')  # or 'cpu' to use the CPU
-# torch.cuda.set_device(device)  # if using CUDA (GPU)
-
-# Set the default device for new tensors
-torch.set_default_tensor_type(torch.FloatTensor)  # for CPU
-# or
-# torch.set_default_tensor_type(torch.cuda.FloatTensor)
 
 # Read the named columns from the csv file into a dataframe.
 names = ['SalePrice', '1st_Flr_SF', '2nd_Flr_SF', 'Lot_Area', 'Overall_Qual',
@@ -33,22 +22,6 @@ data.div_(data.std(0))  # normalize
 
 xss = data[:, 1:]
 yss = data[:, :1]
-xss_training = torch.FloatTensor()
-xss_testing = torch.FloatTensor()
-yss_training = torch.FloatTensor()
-yss_testing = torch.FloatTensor()
-
-for i in range(len(xss)):
-    if random.random() < 0.2:
-        xss_training = torch.cat((xss_training, xss[i].view(1, -1)))  # Append the entire row
-        yss_training = torch.cat((yss_training, yss[i].view(1, -1)))
-    else:
-        xss_testing = torch.cat((xss_testing, xss[i].view(1, -1)))
-        yss_testing = torch.cat((yss_testing, yss[i].view(1, -1)))
-
-print(xss_training.shape, yss_training.shape)
-print(xss_testing.shape, yss_testing.shape)
-print(xss.shape, yss.shape)
 
 
 # define a model class
@@ -75,8 +48,8 @@ print(model)
 
 criterion = nn.MSELoss()
 
-num_examples = len(xss_training)
-batch_size = 10
+num_examples = len(data)
+batch_size = 25
 learning_rate = .007
 momentum = .9
 epochs = 1000
@@ -94,8 +67,8 @@ for epoch in range(epochs):
         # randomly pick batchsize examples from data
         indices = torch.randperm(num_examples)[:batch_size]
 
-        yss_mb = yss_training[indices]  # the targets for the mb (minibatch)
-        yhatss_mb = model(xss_training[indices])  # model outputs for the mb
+        yss_mb = yss[indices]  # the targets for the mb (minibatch)
+        yhatss_mb = model(xss[indices])  # model outputs for the mb
 
         loss = criterion(yhatss_mb, yss_mb)
         model.zero_grad()
@@ -107,7 +80,7 @@ for epoch in range(epochs):
             param.data.sub_(z_parameters[i] * learning_rate)
 
     with torch.no_grad():
-        total_loss = criterion(model(xss_training), yss_training).item()
+        total_loss = criterion(model(xss), yss).item()
 
     print_str = "epoch: {0}, loss: {1}".format(
         epoch + 1, total_loss * batch_size / num_examples)
@@ -123,4 +96,12 @@ print(f"batch size: {batch_size}")
 print(f"learning rate: {learning_rate}")
 print(f"momentum: {momentum}")
 
-print("explained variation:", dulib.explained_var(model, (xss_training, yss_training)))
+# Compute 1-SSE/SST which is the proportion of the variance in the data
+# explained by the regression hyperplane.
+SS_E = 0.0
+SS_T = 0.0
+mean = yss.mean()
+for xs, ys in zip(xss, yss):
+    SS_E = SS_E + (ys - model(xs)) ** 2
+    SS_T = SS_T + (ys - mean) ** 2
+print(f"1-SSE/SST = {1.0 - (SS_E / SS_T).item():1.4f}")
