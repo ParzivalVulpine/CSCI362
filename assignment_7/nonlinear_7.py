@@ -2,21 +2,13 @@
 Uses a neural net to find the ordinary least-squares regression model. Trains
 with batch gradient descent, and computes r^2 to gauge predictive quality.
 """
-
-import random
-
 import du.lib as dulib
 import pandas as pd
 import torch
 import torch.nn as nn
 
-device = torch.device('cpu')  # or 'cpu' to use the CPU
-# torch.cuda.set_device(device)  # if using CUDA (GPU)
-
-# Set the default device for new tensors
-torch.set_default_tensor_type(torch.FloatTensor)  # for CPU
-# or
-# torch.set_default_tensor_type(torch.cuda.FloatTensor)
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+torch.cuda.set_device(device)  # if using CUDA (GPU)
 
 # Read the named columns from the csv file into a dataframe.
 names = ['SalePrice', '1st_Flr_SF', '2nd_Flr_SF', 'Lot_Area', 'Overall_Qual',
@@ -31,19 +23,19 @@ data = torch.FloatTensor(data)  # convert data to a Torch tensor
 data.sub_(data.mean(0))  # mean-center
 data.div_(data.std(0))  # normalize
 
-xss = data[:, 1:]
-yss = data[:, :1]
+xss = data[:, 1:].to(device)
+yss = data[:, :1].to(device)
 
+# split the data into training and testing sets
 random_split = torch.randperm(len(xss))
-xss_training = xss[random_split[:2000]]
-yss_training = yss[random_split[:2000]]
-xss_testing = xss[random_split[2001:-1]]
-yss_testing = yss[random_split[2001:-1]]
+xss_training = xss[random_split[:2000]].to(device)
+yss_training = yss[random_split[:2000]].to(device)
+xss_testing = xss[random_split[2001:-1]].to(device)
+yss_testing = yss[random_split[2001:-1]].to(device)
 
 print(xss_training.shape, yss_training.shape)
 print(xss_testing.shape, yss_testing.shape)
 print(xss.shape, yss.shape)
-
 
 # define a model class
 
@@ -65,6 +57,7 @@ class LinearModel(nn.Module):
 
 # create and print an instance of the model class
 model = LinearModel()
+model = model.to(device)
 print(model)
 
 criterion = nn.MSELoss()
@@ -117,5 +110,6 @@ print(f"batch size: {batch_size}")
 print(f"learning rate: {learning_rate}")
 print(f"momentum: {momentum}")
 
-print("explained variation:", dulib.explained_var(model, (xss_training, yss_training)))
-print("explained variation (in test dataset):", dulib.explained_var(model, (xss_testing, yss_testing)))
+print(f"explained variation: {dulib.explained_var(model, (xss_training, yss_training), gpu=device)}")
+print(f"explained variation (in test dataset): "
+      f"{dulib.explained_var(model.to('cpu'), (xss_testing.to('cpu'), yss_testing.to('cpu')), gpu=-2)}")
