@@ -61,20 +61,10 @@ model = dulib.train(
   crit=criterion,
   train_data=(xss, yss),
   learn_params={"lr": 0.007, "mo":0.9},
+  bs=10,
   valid_metric=pct_correct,
   epochs=150,
   graph=1
 )
 
-zero = torch.min(yss).item()
-eight = torch.max(yss).item()
-th = 1e-3  # threshold
-cutoff = (zero+eight)/2
-
-count = 0
-for i in range(len(xss)):
-  yhat = model(xss[i]).item()
-  y = yss[i].item()
-  if (yhat>cutoff and abs(y-eight)<th) or (yhat<cutoff and abs(y-zero)<th):
-    count += 1
 print("Percentage correct:",pct_correct(model(xss), yss))
