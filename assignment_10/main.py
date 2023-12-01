@@ -14,13 +14,6 @@ for i in range(0, 1000, 20):
     xss[idx] = torch.Tensor((digits[i:i+20,j:j+20]).flatten())
     idx = idx + 1
 
-# # extract just the zeros and eights from xss
-# tempxss = torch.Tensor(1000,400)
-# tempxss[:500] = xss[:500]
-# tempxss[500:] = xss[4000:4500]
-
-# # overwrite the original xss with just zeros and eights
-# xss = tempxss
 
 # generate yss to hold the correct classification for each example
 yss = torch.LongTensor(len(xss))
@@ -30,39 +23,51 @@ for i in range(len(yss)):
 xss, xss_means = dulib.center(xss)
 xss, xss_stds = dulib.normalize(xss)
 
+indices = torch.randperm(len(xss))
+xss = xss[indices]
+yss = yss[indices] # coherently randomize the data
+xss_train = xss[:4000] 
+yss_train = yss[:4000]
+xss_test = xss[4000:] 
+yss_test = yss[4000:]
+
+
 class LogSoftmaxModel(nn.Module):
 
     def __init__(self):
         super(LogSoftmaxModel, self).__init__()
-        self.layer1 = nn.Linear(400,200)
-        self.layer2 = nn.Linear(200,10)
+        self.layer1 = nn.Linear(400,300)
+        self.layer2 = nn.Linear(300,200)
+        self.layer3 = nn.Linear(200,100)
+        self.layer4 = nn.Linear(100,10)
 
     def forward(self, x):
         x = self.layer1(x)
         x = torch.relu(x)
         x = self.layer2(x)
+        x = torch.relu(x)
+        x = self.layer3(x)
+        x = torch.relu(x)
+        x = self.layer4(x)
         return torch.log_softmax(x, dim=1)
 
 model = LogSoftmaxModel()
 
 criterion = nn.NLLLoss()
 
-def pct_correct(yhatss, yss):
-  count = 0
-  for i in range(len(xss_test)):
-    if  torch.argmax(model(xss_test[i].unsqueeze(0))).item() == yss_test[i].item():
-      count += 1
-  print("Percentage correct on test set:",100*count/len(xss_test))
-
 model = dulib.train(
   model=model,
   crit=criterion,
-  train_data=(xss, yss),
-  learn_params={"lr": 0.007, "mo":0.9},
-  bs=10,
-  valid_metric=pct_correct,
-  epochs=150,
+  train_data=(xss_train, yss_train),
+  valid_data=(xss_test, yss_test),
+  learn_params={"lr": 0.00025, "mo":0.952},
+  bs=25,
+  epochs=100,
   graph=1
 )
 
-print("Percentage correct:",pct_correct(model(xss), yss))
+pct_training = dulib.class_accuracy(model, (xss_train, yss_train), show_cm=True)
+print(f"Percentage correct on training data: {100*pct_training:.2f}")
+
+pct_testing = dulib.class_accuracy(model, (xss_test, yss_test), show_cm=True)
+print(f"Percentage correct on testing data: {100*pct_testing:.2f}")
